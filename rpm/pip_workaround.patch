@@ -1,0 +1,37 @@
+diff --git a/macros.pyproject b/macros.pyproject
+index 11fddc7..971a76d 100644
+--- a/macros.pyproject
++++ b/macros.pyproject
+@@ -22,15 +22,17 @@
+ 
+ %pyproject_wheel() %{expand:\\\
+ %_set_pytest_addopts
++export TMPDIR="/tmp/%{_pyproject_builddir}"
++mkdir -p "${TMPDIR}"
+ mkdir -p "%{_pyproject_builddir}"
+-CFLAGS="${CFLAGS:-${RPM_OPT_FLAGS}}" LDFLAGS="${LDFLAGS:-${RPM_LD_FLAGS}}" TMPDIR="%{_pyproject_builddir}" \\\
++CFLAGS="${CFLAGS:-${RPM_OPT_FLAGS}}" LDFLAGS="${LDFLAGS:-${RPM_LD_FLAGS}}" \\\
+ %{__python3} -m pip wheel --wheel-dir %{_pyproject_wheeldir} --no-deps --use-pep517 --no-build-isolation --disable-pip-version-check --no-clean --progress-bar off --verbose .
+ }
+ 
+ 
+ %pyproject_install() %{expand:\\\
+-specifier=$(ls %{_pyproject_wheeldir}/*.whl | xargs basename --multiple | sed -E 's/([^-]+)-([^-]+)-.+\\\.whl/\\\1==\\\2/')
+-TMPDIR="%{_pyproject_builddir}" %{__python3} -m pip install --root %{buildroot} --no-deps --disable-pip-version-check --progress-bar off --verbose --ignore-installed --no-warn-script-location --no-index --no-cache-dir --find-links %{_pyproject_wheeldir} $specifier
++specifier=$(ls %{_pyproject_wheeldir}/*.whl | xargs basename --multiple | sed -r 's/([^-]+)-([^-]+)-.+\\\.whl/\\\1==\\\2/')
++TMPDIR="/tmp/%{_pyproject_builddir}" %{__python3} -m pip install --root %{buildroot} --no-deps --disable-pip-version-check --progress-bar off --verbose --ignore-installed --no-warn-script-location --no-index --no-cache-dir --find-links %{_pyproject_wheeldir} $specifier
+ if [ -d %{buildroot}%{_bindir} ]; then
+   %py3_shebang_fix %{buildroot}%{_bindir}/*
+   rm -rfv %{buildroot}%{_bindir}/__pycache__
+@@ -103,10 +105,9 @@ fi
+ %{-e:%{error:The -N and -e options are mutually exclusive}}
+ %{-t:%{error:The -N and -t options are mutually exclusive}}
+ }
+-%{-e:%{expand:%global toxenv %(%{__python3} -s %{_rpmconfigdir}/redhat/pyproject_construct_toxenv.py %{?**})}}
++%{-e:%{expand:%global toxenv %(%{__python3} -s %{_rpmconfigdir}/meego/pyproject_construct_toxenv.py %{?**})}}
+ echo 'python%{python3_pkgversion}-devel'
+ echo 'python%{python3_pkgversion}dist(pip) >= 19'
+-echo 'python%{python3_pkgversion}dist(packaging)'
+ %{!-N:if [ -f pyproject.toml ]; then
+   echo 'python%{python3_pkgversion}dist(toml)'
+ elif [ -f setup.py ]; then

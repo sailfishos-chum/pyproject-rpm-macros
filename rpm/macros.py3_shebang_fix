@@ -1,0 +1,31 @@
+%py3_shbang_opts -s
+	
+%py3_shbang_opts_nodash %(opts=%{py3_shbang_opts}; echo ${opts#-})
+	
+%py3_shebang_flags %(opts=%{py3_shbang_opts}; echo ${opts#-})
+	
+%py3_shebang_fix %{expand:\\\
+	
+  if [ -f /usr/bin/pathfix%{python3_version}.py ]; then
+	
+    pathfix=/usr/bin/pathfix%{python3_version}.py
+	
+  else
+	
+    # older versions of Python don't have it and must BR /usr/bin/pathfix.py from python3-devel explicitly
+	
+    pathfix=/usr/bin/pathfix.py
+	
+  fi
+	
+  if [ -z "%{?py3_shebang_flags}" ]; then
+	
+    shebang_flags="-k"
+	
+  else
+	
+    shebang_flags="-ka%{py3_shebang_flags}"
+	
+  fi
+	
+  $pathfix -pni %{__python3} $shebang_flags}
